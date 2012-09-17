@@ -100,7 +100,9 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         print "graph_title HTTP - %s" % upstream
         print "graph_vlabel Requests"
         print "graph_category nginx"
-        for status in httpStatusList.keys():
+        keylist = httpStatusList.keys()
+        keylist.sort()
+        for status in keylist:
             print "http%s_status.label %s - %s" % (status, status, httpStatusList[status]["title"])
         print ""
 
@@ -229,7 +231,9 @@ else:
     for upstream in upstreams.keys():
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_statuses" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
-        for status in httpStatusList.keys():
+        keylist = httpStatusList.keys()
+        keylist.sort()
+        for status in keylist:
             print "http%s_status.value %s" % (status, upstreams[upstream]["http"][status]["requests"])
         print ""
 
