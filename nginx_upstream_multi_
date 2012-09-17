@@ -71,7 +71,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     print "graph_vlabel Requests"
     print "graph_category nginx"
     for upstream in upstreams.keys():
-        print "%s_requests.label %s" % (upstream.replace(".", "_"), upstream)
+        print "%s_requests.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
 
     # Requests graph declaration
     for upstream in upstreams.keys():
@@ -206,7 +206,7 @@ else:
 
     # Parent graph data
     for upstream in upstreams.keys():
-        print "%s_requests.value %s" % (upstream.replace(".", "_"), upstreams[upstream]["requests"])
+        print "%s_requests.value %s" % (upstream.replace(".", "_").replace(":", "_"), upstreams[upstream]["requests"])
 
     # Requests graph data
     for upstream in upstreams.keys():
