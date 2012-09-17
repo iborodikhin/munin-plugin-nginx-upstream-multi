@@ -45,7 +45,7 @@ for statusString in httpStatusString.split(";"):
         "requests" : 0
     }
 
-cacheStatusList = { "-", "MISS", "EXPIRED", "UPDATING", "STALE", "HIT" }
+cacheStatusList = { "MISS" : 0, "EXPIRED" : 0, "UPDATING" : 0, "STALE" : 0, "HIT" : 0 }
 
 # Parse upstreams
 upstreams = {}
@@ -70,70 +70,79 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     print "graph_title Nginx upstream stats"
     print "graph_vlabel Requests"
     print "graph_category nginx"
-    print ""
     for upstream in upstreams.keys():
         print "%s_requests.label %s" % (upstream.replace(".", "_"), upstream)
 
     # Requests graph declaration
     for upstream in upstreams.keys():
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_requests" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
+        print "multigraph nginx_upstream_multi_%s.%s_requests" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         print "graph_title Requests number - %s" % upstream
         print "graph_vlabel Requests"
         print "graph_category nginx"
-        print ""
-        print "%s_requests.label %s" % (upstream.replace(".", "_"), upstream)
+        print "%s_requests.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
         print ""
 
     # Times graph declaration
     for upstream in upstreams.keys():
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_times" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
+        print "multigraph nginx_upstream_multi_%s.%s_times" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         print "graph_title Request time - %s" % upstream
         print "graph_vlabel msec."
         print "graph_category nginx"
-        print ""
-        print "%s_times.label %s" % (upstream.replace(".", "_"), upstream)
+        print "%s_times.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
         print ""
 
     # HTTP Status codes graph declaration
     for upstream in upstreams.keys():
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_statuses" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
+        print "multigraph nginx_upstream_multi_%s.%s_statuses" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         print "graph_title HTTP - %s" % upstream
         print "graph_vlabel Requests"
         print "graph_category nginx"
-        print ""
         for status in httpStatusList.keys():
-            print "http%s_status.label %s" % (status, httpStatusList[status]["title"])
+            print "http%s_status.label %s - %s" % (status, status, httpStatusList[status]["title"])
         print ""
 
     # Cache status graph declaration
     for upstream in upstreams.keys():
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_cache" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
+        print "multigraph nginx_upstream_multi_%s.%s_cache" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         print "graph_title Cache - %s" % upstream
         print "graph_vlabel Requests"
         print "graph_category nginx"
-        print ""
         for status in cacheStatusList:
             print "%s_cache.label %s" % (status.replace(".", "_"), status)
         print ""
 else:
-    lastBytePath = "%snginx_upstream_multi_%s_lastByte.txt" % (stateDir, siteName)
+    lastBytePath = "%s/nginx_upstream_multi_%s_lastByte.txt" % (stateDir, siteName)
+
+    lastByteHandle = None
+
     try:
         lastByteHandle = open(lastBytePath, "r")
-        lastByte = lastByteHandle.read()
-        lastByteHandle.close()
+        lastByte = int(lastByteHandle.read())
     except Exception:
         lastByte = 0
 
-    logHandle = open(logPath, "r")
-    logSize = os.path.getsize(logPath)
+    if lastByteHandle != None:
+        lastByteHandle.close()
+
+    try:
+        logHandle = open(logPath, "r")
+    except Exception:
+        print "Log file %s not readable" % logPath
+        sys.exit(1)
+
+    try:
+        logSize = int(os.path.getsize(logPath))
+    except ValueError:
+        logSize = 0
+
     if logSize < lastByte:
         lastByte = 0
 
-    regExp = re.compile("ua=\[([^\]+)\]\s+ut=\[([^\]+)\]\s+us=\[([^\]+)\]\s+cs=\[([^\]+)\]", re.IGNORECASE | re.DOTALL)
+    regExp = re.compile(r"ua=\[(.*?)\]\s+ut=\[(.*?)\]\s+us=\[(.*?)\]\s+cs=\[(.*?)\]")
 
     logHandle.seek(lastByte)
     for line in logHandle:
@@ -167,20 +176,32 @@ else:
             statuses  = status.split()
             caches    = cache.split()
 
-            for index in addresses.keys():
-                if addresses[index] in upstreams.keys():
-                    uAddress = addresses[index]
-                    uTime    = times[index]
+            index = 0
+            for uAddress in addresses:
+                if uAddress in upstreams.keys():
+                    try:
+                        uTime    = float(times[index])
+                    except ValueError:
+                        uTime    = 0
                     uStatus  = statuses[index]
                     uCache   = caches[index]
-                    upstreams[uAddress]["requests"]                  += 1
-                    upstreams[uAddress]["time"]                      += uTime
-                    upstreams[uAddress]["http"][uStatus]["requests"] += 1
-                    upstreams[uAddress]["cache"][uCache]             += 1
+                    if uAddress != "-":
+                        upstreams[uAddress]["requests"]                  += 1
+                    if uTime != "-":
+                        upstreams[uAddress]["time"]                      += uTime
+                    if uStatus != "-":
+                        upstreams[uAddress]["http"][uStatus]["requests"] += 1
+                    if uCache != "-":
+                        upstreams[uAddress]["cache"][uCache]             += 1
+                index += 1
 
-    lastByteHandle = open(lastBytePath, "w")
-    lastByteHandle.write(str(logHandle.tell()))
-    lastByteHandle.close()
+    try:
+        lastByteHandle = open(lastBytePath, "w")
+        lastByteHandle.write(str(logHandle.tell()))
+        lastByteHandle.close()
+    except Exception:
+        sys.exit(1)
+
     logHandle.close()
 
     # Parent graph data
@@ -190,21 +211,24 @@ else:
     # Requests graph data
     for upstream in upstreams.keys():
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_requests" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
-        print "%s_requests.value %s" % (upstream.replace(".", "_"), upstreams[upstream]["requests"])
+        print "multigraph nginx_upstream_multi_%s.%s_requests" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
+        print "%s_requests.value %s" % (upstream.replace(".", "_").replace(":", "_"), upstreams[upstream]["requests"])
         print ""
 
     # Times graph data
     for upstream in upstreams.keys():
+        uTime = 0
+        if upstreams[upstream]["requests"] > 0:
+            uTime = upstreams[upstream]["time"] / upstreams[upstream]["requests"]
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_times" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
-        print "%s_times.value %s" % (upstream.replace(".", "_"), upstreams[upstream]["time"] / upstreams[upstream]["requests"])
+        print "multigraph nginx_upstream_multi_%s.%s_times" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
+        print "%s_times.value %s" % (upstream.replace(".", "_").replace(":", "_"), uTime)
         print ""
 
     # HTTP Status codes graph data
     for upstream in upstreams.keys():
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_statuses" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
+        print "multigraph nginx_upstream_multi_%s.%s_statuses" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         for status in httpStatusList.keys():
             print "http%s_status.value %s" % (status, upstreams[upstream]["http"][status]["requests"])
         print ""
@@ -212,7 +236,7 @@ else:
     # Cache status graph data
     for upstream in upstreams.keys():
         print ""
-        print "multigraph nginx_upstream_multi_%s.%s_cache" % (siteName.replace(".", "_"), upstream.replace(".", "_"))
+        print "multigraph nginx_upstream_multi_%s.%s_cache" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         for status in cacheStatusList:
             print "%s_cache.value %s" % (status.replace(".", "_"), upstreams[upstream]["cache"][status])
         print ""
