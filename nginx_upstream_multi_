@@ -71,7 +71,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     print "graph_vlabel Requests"
     print "graph_category nginx"
     for upstream in upstreams.keys():
-        print "%s_requests.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
+        print "us%s_requests.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
 
     # Requests graph declaration
     for upstream in upstreams.keys():
@@ -80,7 +80,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         print "graph_title Requests number - %s" % upstream
         print "graph_vlabel Requests"
         print "graph_category nginx"
-        print "%s_requests.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
+        print "us%s_requests.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
         print ""
 
     # Times graph declaration
@@ -88,9 +88,9 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_times" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         print "graph_title Request time - %s" % upstream
-        print "graph_vlabel msec."
+        print "graph_vlabel sec."
         print "graph_category nginx"
-        print "%s_times.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
+        print "us%s_times.label %s" % (upstream.replace(".", "_").replace(":", "_"), upstream)
         print ""
 
     # HTTP Status codes graph declaration
@@ -114,7 +114,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         print "graph_vlabel Requests"
         print "graph_category nginx"
         for status in cacheStatusList:
-            print "%s_cache.label %s" % (status.replace(".", "_"), status)
+            print "us%s_cache.label %s" % (status.replace(".", "_"), status)
         print ""
 else:
     lastBytePath = "%s/nginx_upstream_multi_%s_lastByte.txt" % (stateDir, siteName)
@@ -208,13 +208,13 @@ else:
 
     # Parent graph data
     for upstream in upstreams.keys():
-        print "%s_requests.value %s" % (upstream.replace(".", "_").replace(":", "_"), upstreams[upstream]["requests"])
+        print "us%s_requests.value %s" % (upstream.replace(".", "_").replace(":", "_"), upstreams[upstream]["requests"])
 
     # Requests graph data
     for upstream in upstreams.keys():
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_requests" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
-        print "%s_requests.value %s" % (upstream.replace(".", "_").replace(":", "_"), upstreams[upstream]["requests"])
+        print "us%s_requests.value %s" % (upstream.replace(".", "_").replace(":", "_"), upstreams[upstream]["requests"])
         print ""
 
     # Times graph data
@@ -224,7 +224,7 @@ else:
             uTime = upstreams[upstream]["time"] / upstreams[upstream]["requests"]
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_times" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
-        print "%s_times.value %s" % (upstream.replace(".", "_").replace(":", "_"), uTime)
+        print "us%s_times.value %s" % (upstream.replace(".", "_").replace(":", "_"), uTime)
         print ""
 
     # HTTP Status codes graph data
@@ -242,5 +242,5 @@ else:
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_cache" % (siteName.replace(".", "_"), upstream.replace(".", "_").replace(":", "_"))
         for status in cacheStatusList:
-            print "%s_cache.value %s" % (status.replace(".", "_"), upstreams[upstream]["cache"][status])
+            print "us%s_cache.value %s" % (status.replace(".", "_"), upstreams[upstream]["cache"][status])
         print ""
