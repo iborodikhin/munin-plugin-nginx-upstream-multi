@@ -37,13 +37,19 @@ httpStatusString = ("100:Continue;101:Switching protocols;102:Processing;200:OK;
 "503:Service unavailable;504:Gateway timeout;505:HTTP version not supported;506:Variant also negotiates;"
 "507:Insufficient storage;508:Loop detected;509:Bandwidth limit exceeded;510:Not extended")
 
+if "statuses" in os.environ:
+    statuses = os.environ["statuses"].split()
+else:
+    statuses = []
+
 httpStatusList = {}
 for statusString in httpStatusString.split(";"):
     [code, title] = statusString.split(":")
-    httpStatusList[code] = {
-        "title" : title,
-        "requests" : 0
-    }
+    if len(statuses) > 0 and code in statuses or len(statuses) == 0:
+        httpStatusList[code] = {
+            "title" : title,
+            "requests" : 0
+        }
 
 cacheStatusList = { "MISS" : 0, "EXPIRED" : 0, "UPDATING" : 0, "STALE" : 0, "HIT" : 0 }
 
@@ -191,7 +197,7 @@ else:
                         upstreams[uAddress]["requests"]                  += 1
                     if uTime != "-":
                         upstreams[uAddress]["time"]                      += uTime
-                    if uStatus != "-":
+                    if uStatus != "-" and uStatus in upstreams[uAddress]["http"].keys():
                         upstreams[uAddress]["http"][uStatus]["requests"] += 1
                     if uCache != "-":
                         upstreams[uAddress]["cache"][uCache]             += 1
