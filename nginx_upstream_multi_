@@ -20,7 +20,7 @@
 # Specify log_format at /etc/nginx/conf.d/upstream.conf:
 # log_format upstream "ua=[$upstream_addr] ut=[$upstream_response_time] us=[$upstream_status] cs=[$upstream_cache_status]"
 #
-# Use it in your site configuration (/etc/nginx/sites-enabled/anything.log):
+# Use it in your site configuration (/etc/nginx/sites-enabled/anything.conf):
 # access_log /var/log/nginx/upstream.log upstream;
 #
 # And specify some options in munin-node.conf:
