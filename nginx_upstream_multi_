@@ -9,8 +9,6 @@
 #
 # License : GPLv3
 #
-# log_format upstream "ua=[$upstream_addr] ut=[$upstream_response_time] us=[$upstream_status] cs=[$upstream_cache_status]"
-#
 # Configuration parameters:
 # env.log - log file path (mandatory, ex.: /var/log/nginx/upstream.log)
 # env.upstreams - list of upstreams to monitor (mandatory, including port numbers separated by space, ex.: 10.0.0.1:80 10.0.0.2:8080)
@@ -18,6 +16,12 @@
 #
 # ## Installation
 # Copy file to directory /usr/share/munin/pligins/ and create symbolic link(s) for each log file you wish to monitor.
+#
+# Specify log_format at /etc/nginx/conf.d/upstream.conf:
+# log_format upstream "ua=[$upstream_addr] ut=[$upstream_response_time] us=[$upstream_status] cs=[$upstream_cache_status]"
+#
+# Use it in your site configuration (/etc/nginx/sites-enabled/anything.log):
+# access_log /var/log/nginx/upstream.log upstream;
 #
 # And specify some options in munin-node.conf:
 #
