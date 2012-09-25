@@ -33,7 +33,7 @@
 #%# capabilities=autoconf
 #%# family=contrib
 
-import os, sys, re
+import os, sys, re, copy
 
 # How we've been called
 progName = sys.argv[0]
@@ -92,8 +92,8 @@ if "upstream" in os.environ:
         upstreams[upstream] = {
             "requests" : 0,
             "time"     : 0,
-            "cache"    : cacheStatusList,
-            "http"     : httpStatusList
+            "cache"    : copy.deepcopy(cacheStatusList),
+            "http"     : copy.deepcopy(httpStatusList)
         }
 else:
     raise Exception("No upstreams specified")
@@ -142,7 +142,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         keylist = httpStatusList.keys()
         keylist.sort()
         for status in keylist:
-            print "http%s_status.label %s - %s" % (status, status, httpStatusList[status]["title"])
+            print "http%s_%s_status.label %s - %s" % (status, sanitize(upstream), status, httpStatusList[status]["title"])
         print ""
 
     # Cache status graph declaration
@@ -153,7 +153,7 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         print "graph_vlabel Requests"
         print "graph_category nginx"
         for status in cacheStatusList:
-            print "us%s_cache.label %s" % (sanitize(status), status)
+            print "us%s_%s_cache.label %s" % (sanitize(status), sanitize(upstream), status)
         print ""
 else:
     lastBytePath = "%s/nginx_upstream_multi_%s_lastByte.txt" % (stateDir, siteName)
@@ -226,6 +226,7 @@ else:
                         uTime    = 0
                     uStatus  = statuses[index]
                     uCache   = caches[index]
+
                     if uAddress != "-":
                         upstreams[uAddress]["requests"]                  += 1
                     if uTime != "-":
@@ -273,7 +274,7 @@ else:
         keylist = httpStatusList.keys()
         keylist.sort()
         for status in keylist:
-            print "http%s_status.value %s" % (status, upstreams[upstream]["http"][status]["requests"])
+            print "http%s_%s_status.value %s" % (status, sanitize(upstream), upstreams[upstream]["http"][status]["requests"])
         print ""
 
     # Cache status graph data
@@ -281,5 +282,5 @@ else:
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_cache" % (sanitize(siteName), sanitize(upstream))
         for status in cacheStatusList:
-            print "us%s_cache.value %s" % (sanitize(status), upstreams[upstream]["cache"][status])
+            print "us%s_%s_cache.value %s" % (sanitize(status), sanitize(upstream), upstreams[upstream]["cache"][status])
         print ""
