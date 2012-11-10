@@ -33,7 +33,7 @@
 #%# capabilities=autoconf
 #%# family=contrib
 
-import os, sys, re, copy
+import os, sys, re, copy, math
 
 # How we've been called
 progName = sys.argv[0]
@@ -92,11 +92,17 @@ if "upstream" in os.environ:
         upstreams[upstream] = {
             "requests" : 0,
             "time"     : 0,
+            "times"    : [],
             "cache"    : copy.deepcopy(cacheStatusList),
             "http"     : copy.deepcopy(httpStatusList)
         }
 else:
     raise Exception("No upstreams specified")
+
+if "percentile" in os.environ:
+    percentile = os.environ["percentile"]
+else:
+    percentile = 80
 
 def sanitize(string):
     return string.replace(".", "_").replace(":", "_").replace("/", "_")
@@ -129,7 +135,8 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         print "graph_title Request time - %s" % upstream
         print "graph_vlabel sec."
         print "graph_category nginx"
-        print "us%s_times.label %s" % (sanitize(upstream), upstream)
+        print "us%s_times.label average" % (sanitize(upstream))
+        print "us%s_times_percentile.label %s-percentile" % (sanitize(upstream), percentile)
         print ""
 
     # HTTP Status codes graph declaration
@@ -231,6 +238,7 @@ else:
                         upstreams[uAddress]["requests"]                  += 1
                     if uTime != "-":
                         upstreams[uAddress]["time"]                      += uTime
+                        upstreams[uAddress]["times"].append(uTime)
                     if uStatus != "-" and uStatus in upstreams[uAddress]["http"].keys():
                         upstreams[uAddress]["http"][uStatus]["requests"] += 1
                     if uCache != "-":
@@ -260,11 +268,21 @@ else:
     # Times graph data
     for upstream in upstreams.keys():
         uTime = 0
+        percentileTime = 0
         if upstreams[upstream]["requests"] > 0:
             uTime = upstreams[upstream]["time"] / upstreams[upstream]["requests"]
+            upstreams[upstream]["times"].sort()
+            percentileKey = percentile * len(upstreams[upstream]["times"]) / 100
+            if len(upstreams[upstream]["times"])%2 > 0:
+                low = int(math.floor(percentileKey))
+                high = int(math.ceil(percentileKey))
+                percentileValue = (upstreams[upstream]["times"][low] + upstreams[upstream]["times"][high]) / 2
+            else:
+                percentileValue = upstreams[upstream]["times"][int(percentileKey)]
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_times" % (sanitize(siteName), sanitize(upstream))
         print "us%s_times.value %s" % (sanitize(upstream), uTime)
+        print "us%s_times_percentile.value %s" % (sanitize(upstream), percentileValue)
         print ""
 
     # HTTP Status codes graph data
