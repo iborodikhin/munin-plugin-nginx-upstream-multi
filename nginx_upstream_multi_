@@ -232,12 +232,12 @@ else:
                     except ValueError:
                         uTime    = 0
 
-                    if index in statuses:
+                    if index < len(statuses):
                         uStatus  = statuses[index]
                     else:
                         uStatus = "-"
 
-                    if index in caches:
+                    if index < len(caches):
                         uCache   = caches[index]
                     else:
                         uCache = "-"
