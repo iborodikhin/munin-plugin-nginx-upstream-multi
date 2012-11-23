@@ -29,6 +29,7 @@
 #     env.log /var/log/nginx/upstream.log
 #     env.upstreams 10.0.0.1:80 10.0.0.2:8080 unix:/tmp/upstream3
 #     env.statuses 200 403 404 410 500 502
+#     env.percentiles 50 80
 #
 #%# capabilities=autoconf
 #%# family=contrib
@@ -99,10 +100,10 @@ if "upstream" in os.environ:
 else:
     raise Exception("No upstreams specified")
 
-if "percentile" in os.environ:
-    percentile = os.environ["percentile"]
+if "percentiles" in os.environ:
+    percentiles = os.environ["percentiles"].split()
 else:
-    percentile = 80
+    percentiles = [80]
 
 def sanitize(string):
     return string.replace(".", "_").replace(":", "_").replace("/", "_")
@@ -136,7 +137,8 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
         print "graph_vlabel sec."
         print "graph_category nginx"
         print "us%s_times.label average" % (sanitize(upstream))
-        print "us%s_times_percentile.label %s-percentile" % (sanitize(upstream), percentile)
+        for percentile in percentiles:
+            print "us%s_times_percentile_%s.label %s-percentile" % (sanitize(upstream), percentile, percentile)
         print ""
 
     # HTTP Status codes graph declaration
@@ -276,21 +278,24 @@ else:
     # Times graph data
     for upstream in upstreams.keys():
         uTime = 0
-        percentileTime = 0
         if upstreams[upstream]["requests"] > 0:
             uTime = upstreams[upstream]["time"] / upstreams[upstream]["requests"]
             upstreams[upstream]["times"].sort()
-            percentileKey = percentile * len(upstreams[upstream]["times"]) / 100
-            if len(upstreams[upstream]["times"])%2 > 0:
-                low = int(math.floor(percentileKey))
-                high = int(math.ceil(percentileKey))
-                percentileValue = (upstreams[upstream]["times"][low] + upstreams[upstream]["times"][high]) / 2
-            else:
-                percentileValue = upstreams[upstream]["times"][int(percentileKey)]
         print ""
         print "multigraph nginx_upstream_multi_%s.%s_times" % (sanitize(siteName), sanitize(upstream))
         print "us%s_times.value %s" % (sanitize(upstream), uTime)
-        print "us%s_times_percentile.value %s" % (sanitize(upstream), percentileValue)
+        for percentile in percentiles:
+            percentileValue = 0
+            if upstreams[upstream]["requests"] > 0:
+                uTime = upstreams[upstream]["time"] / upstreams[upstream]["requests"]
+                percentileKey = int(percentile) * len(upstreams[upstream]["times"]) / 100
+                if len(upstreams[upstream]["times"])%2 > 0:
+                    low = int(math.floor(percentileKey))
+                    high = int(math.ceil(percentileKey))
+                    percentileValue = (upstreams[upstream]["times"][low] + upstreams[upstream]["times"][high]) / 2
+                else:
+                    percentileValue = upstreams[upstream]["times"][int(percentileKey)]
+            print "us%s_times_percentile_%s.value %s" % (sanitize(upstream), percentile, percentileValue)
         print ""
 
     # HTTP Status codes graph data
