@@ -34,7 +34,6 @@
 #     env.statuses 200 403 404 410 500 502
 #     env.percentiles 50 80
 #
-#%# capabilities=autoconf
 #%# family=contrib
 
 import os, sys, re, copy, math
@@ -116,9 +115,7 @@ else:
 def sanitize(string):
     return string.replace(".", "_").replace(":", "_").replace("/", "_")
 
-if len(sys.argv) == 2 and sys.argv[1] == "autoconf":
-    print "yes"
-elif len(sys.argv) == 2 and sys.argv[1] == "config":
+if len(sys.argv) == 2 and sys.argv[1] == "config":
     # Parent graph declaration
     print "multigraph nginx_upstream_multi_%s" % siteName.replace(".", "_")
     print "graph_title Nginx upstream stats"
