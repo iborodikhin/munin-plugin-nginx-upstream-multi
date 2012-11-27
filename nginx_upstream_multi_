@@ -12,7 +12,7 @@
 # Configuration parameters:
 # env.graphs - which graphs to produce (optional, list of graphs separated by spaces, default - cache http time request)
 # env.log - log file path (mandatory, ex.: /var/log/nginx/upstream.log)
-# env.upstreams - list of upstreams to monitor (mandatory, including port numbers separated by space, ex.: 10.0.0.1:80 10.0.0.2:8080)
+# env.upstream - list of upstreams to monitor (mandatory, including port numbers separated by space, ex.: 10.0.0.1:80 10.0.0.2:8080)
 # env.statuses - list of http status codes to monitor (optional, default - all statuses, ex.: 200 403 404 410 500 502)
 # env.percentiles - which percentiles to draw on time graphs (optional, list of percentiles separated by spaces, default - 80)
 #
@@ -27,10 +27,10 @@
 #
 # And specify some options in munin-node.conf:
 #
-#     [nginx_upstram_multi_upstream]
+#     [nginx_upstream_multi_upstream]
 #     env.graphs cache http time request
 #     env.log /var/log/nginx/upstream.log
-#     env.upstreams 10.0.0.1:80 10.0.0.2:8080 unix:/tmp/upstream3
+#     env.upstream 10.0.0.1:80 10.0.0.2:8080 unix:/tmp/upstream3
 #     env.statuses 200 403 404 410 500 502
 #     env.percentiles 50 80
 #
@@ -84,7 +84,7 @@ for statusString in httpStatusString.split(";"):
             "requests" : 0
         }
 
-cacheStatusList = { "MISS" : 0, "EXPIRED" : 0, "UPDATING" : 0, "STALE" : 0, "HIT" : 0 }
+cacheStatusList = { "MISS" : 0, "BYPASS" : 0, "EXPIRED" : 0, "UPDATING" : 0, "STALE" : 0, "HIT" : 0 }
 
 # Parse upstreams
 upstreams = {}
