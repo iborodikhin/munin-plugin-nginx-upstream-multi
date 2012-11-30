@@ -37,6 +37,7 @@
 #%# family=contrib
 
 import os, sys, re, copy, math
+from time import time
 
 # How we've been called
 progName = sys.argv[0]
@@ -112,14 +113,18 @@ if "graphs" in os.environ:
 else:
     graphs_enabled = ["cache", "http", "time", "request"]
 
+lastBytePath = "%s/nginx_upstream_multi_%s_lastByte.txt" % (stateDir, siteName)
+lastRun = os.path.getmtime(lastBytePath)
+now = int(time())
+
 def sanitize(string):
     return string.replace(".", "_").replace(":", "_").replace("/", "_")
 
 if len(sys.argv) == 2 and sys.argv[1] == "config":
     # Parent graph declaration
     print "multigraph nginx_upstream_multi_%s" % siteName.replace(".", "_")
-    print "graph_title Nginx upstream stats"
-    print "graph_vlabel Requests"
+    print "graph_title Requests number"
+    print "graph_vlabel rps"
     print "graph_category nginx"
     for upstream in upstreams.keys():
         print "us%s_requests.label %s" % (sanitize(upstream), upstream)
@@ -130,7 +135,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "config":
             print ""
             print "multigraph nginx_upstream_multi_%s.%s_requests" % (sanitize(siteName), sanitize(upstream))
             print "graph_title Requests number - %s" % upstream
-            print "graph_vlabel Requests"
+            print "graph_vlabel rps"
             print "graph_category nginx"
             print "us%s_requests.label %s" % (sanitize(upstream), upstream)
             print ""
@@ -154,7 +159,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "config":
             print ""
             print "multigraph nginx_upstream_multi_%s.%s_statuses" % (sanitize(siteName), sanitize(upstream))
             print "graph_title HTTP - %s" % upstream
-            print "graph_vlabel Requests"
+            print "graph_vlabel rps"
             print "graph_category nginx"
             keylist = httpStatusList.keys()
             keylist.sort()
@@ -168,13 +173,13 @@ if len(sys.argv) == 2 and sys.argv[1] == "config":
             print ""
             print "multigraph nginx_upstream_multi_%s.%s_cache" % (sanitize(siteName), sanitize(upstream))
             print "graph_title Cache - %s" % upstream
-            print "graph_vlabel Requests"
+            print "graph_vlabel rps"
             print "graph_category nginx"
             for status in cacheStatusList:
                 print "us%s_%s_cache.label %s" % (sanitize(status), sanitize(upstream), status)
             print ""
 else:
-    lastBytePath = "%s/nginx_upstream_multi_%s_lastByte.txt" % (stateDir, siteName)
+    timeElapsed = now - lastRun
 
     lastByteHandle = None
 
@@ -275,14 +280,14 @@ else:
 
     # Parent graph data
     for upstream in upstreams.keys():
-        print "us%s_requests.value %s" % (sanitize(upstream), upstreams[upstream]["requests"])
+        print "us%s_requests.value %s" % (sanitize(upstream), upstreams[upstream]["requests"] / timeElapsed)
 
     # Requests graph data
     if "request" in graphs_enabled:
         for upstream in upstreams.keys():
             print ""
             print "multigraph nginx_upstream_multi_%s.%s_requests" % (sanitize(siteName), sanitize(upstream))
-            print "us%s_requests.value %s" % (sanitize(upstream), upstreams[upstream]["requests"])
+            print "us%s_requests.value %s" % (sanitize(upstream), upstreams[upstream]["requests"] / timeElapsed)
             print ""
 
     # Times graph data
@@ -317,7 +322,7 @@ else:
             keylist = httpStatusList.keys()
             keylist.sort()
             for status in keylist:
-                print "http%s_%s_status.value %s" % (status, sanitize(upstream), upstreams[upstream]["http"][status]["requests"])
+                print "http%s_%s_status.value %s" % (status, sanitize(upstream), upstreams[upstream]["http"][status]["requests"] / timeElapsed)
             print ""
 
     # Cache status graph data
@@ -326,5 +331,5 @@ else:
             print ""
             print "multigraph nginx_upstream_multi_%s.%s_cache" % (sanitize(siteName), sanitize(upstream))
             for status in cacheStatusList:
-                print "us%s_%s_cache.value %s" % (sanitize(status), sanitize(upstream), upstreams[upstream]["cache"][status])
+                print "us%s_%s_cache.value %s" % (sanitize(status), sanitize(upstream), upstreams[upstream]["cache"][status] / timeElapsed)
             print ""
