@@ -123,7 +123,7 @@ except OSError:
 
 
 def sanitize(string):
-    return string.replace(".", "_").replace(":", "_").replace("/", "_")
+    return string.replace(".", "_").replace(":", "_").replace("/", "_").replace("-", "_")
 
 if len(sys.argv) == 2 and sys.argv[1] == "config":
     # Parent graph declaration
