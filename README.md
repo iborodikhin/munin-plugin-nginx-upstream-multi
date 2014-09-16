@@ -1,7 +1,7 @@
 Munin plugin to monitor requests number, cache statuses, http status codes and average request times of
 specified nginx upstreams.
 
-# Configuration parameters:
+## Configuration parameters:
 * *env.graphs* — which graphs to produce (optional, list of graphs separated by spaces, default — cache http time request)
 * *env.log* — log file path (mandatory, ex.: /var/log/nginx/upstream.log)
 * *env.upstream* — list of upstreams to monitor (mandatory, including port numbers separated by space, ex.: 10.0.0.1:80 10.0.0.2:8080)
